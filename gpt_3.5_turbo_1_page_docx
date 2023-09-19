@@ -1,0 +1,50 @@
+import openai
+from docx import Document
+import gradio as gr
+
+# Initialize the OpenAI API client
+openai.api_key = XXX  # Replace with your API key
+
+def read_docx_content(filename):
+    doc = Document(filename)
+    full_text = []
+    for para in doc.paragraphs:
+        full_text.append(para.text)
+    return '\n'.join(full_text)
+
+def ask_openai(question, context):
+    # Construct the messages for the chat model
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": f"Document Content:\n{context}"},
+        {"role": "user", "content": f"Question: {question}"}
+    ]
+    
+    # Use the OpenAI API with the chat endpoint
+    response = openai.ChatCompletion.create(
+      model="gpt-3.5-turbo",
+      messages=messages,
+      max_tokens=2950  # Set to the maximum limit
+    )
+    
+    # Extract the assistant's message for the answer
+    answer = response.choices[0].message['content']
+    
+    return answer.strip()
+
+def query_document(question):
+    # Load your docx file's content
+    document_content = read_docx_content(r"C:\Users\alexa\Desktop\docs\BEST_CLI_9_19_2023_1 page.docx")
+    answer = ask_openai(question, document_content)
+    return f"Answer: {answer}"
+
+# Gradio Interface
+iface = gr.Interface(
+    fn=query_document,
+    inputs=gr.inputs.Textbox(lines=3, placeholder="Enter your question..."),
+    outputs="text",
+    live=True
+)
+
+if __name__ == "__main__":
+    iface.launch()
